@@ -1,4 +1,6 @@
 <script setup>
+import MoreBtn from '@/@core/components/MoreBtn.vue';
+
 const statistics = [
   {
     title: 'Sales',

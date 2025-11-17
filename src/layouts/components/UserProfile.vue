@@ -1,5 +1,17 @@
 <script setup>
+import { useAuthStore } from '@/stores/auth';
 import avatar1 from '@images/avatars/avatar-1.png';
+import { useRouter } from 'vue-router';
+
+const auth = useAuthStore();
+const router = useRouter();
+
+const fullName = computed(() => auth.fullName);
+
+function logout() {
+  auth.logout();
+  router.replace('/login');
+}
 </script>
 
 <template>
@@ -48,7 +60,7 @@ import avatar1 from '@images/avatars/avatar-1.png';
             </template>
 
             <VListItemTitle class="font-weight-semibold">
-              John Doe
+              {{ fullName }}
             </VListItemTitle>
             <VListItemSubtitle>Admin</VListItemSubtitle>
           </VListItem>
@@ -67,7 +79,7 @@ import avatar1 from '@images/avatars/avatar-1.png';
           </VListItem>
 
           <!-- 👉 Logout -->
-          <VListItem to="/login">
+          <VListItem @click="logout">
             <template #prepend>
               <VIcon
                 class="me-2"

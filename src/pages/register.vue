@@ -1,26 +1,69 @@
 <script setup>
-import { useTheme } from 'vuetify'
-import AuthProvider from '@/views/pages/authentication/AuthProvider.vue'
-import logo from '@images/logo.svg?raw'
-import authV1MaskDark from '@images/pages/auth-v1-mask-dark.png'
-import authV1MaskLight from '@images/pages/auth-v1-mask-light.png'
-import authV1Tree2 from '@images/pages/auth-v1-tree-2.png'
-import authV1Tree from '@images/pages/auth-v1-tree.png'
+import { useAuthStore } from '@/stores/auth';
+import { validatePassword } from '@/utils/passwordValidation';
+import logo from '@images/logo.svg?raw';
+import authV1MaskDark from '@images/pages/auth-v1-mask-dark.png';
+import authV1MaskLight from '@images/pages/auth-v1-mask-light.png';
+import authV1Tree2 from '@images/pages/auth-v1-tree-2.png';
+import authV1Tree from '@images/pages/auth-v1-tree.png';
+import { Field, Form as VeeForm } from 'vee-validate';
+import { useRouter } from 'vue-router';
+import { useTheme } from 'vuetify';
+import * as yup from 'yup';
 
-const form = ref({
-  username: '',
+const vuetifyTheme = useTheme();
+const auth = useAuthStore();
+const router = useRouter();
+
+const isPasswordVisible = ref(false);
+const submitting = ref(false);
+const errorMessage = ref('');
+
+const authThemeMask = computed(() => {
+  return vuetifyTheme.global.name.value === 'light' ? authV1MaskLight : authV1MaskDark;
+});
+
+const schema = yup.object({
+  firstName: yup.string().required('First name is required'),
+  lastName: yup.string().required('Last name is required'),
+  email: yup.string().email('Invalid email').required('Email is required'),
+  password: yup
+    .string()
+    .required('Password is required')
+    .test('password-requirements', function (value) {
+      if (!value) return this.createError({ message: 'Password is required' })
+      const validation = validatePassword(value)
+      if (!validation.isValid) {
+        return this.createError({ message: validation.error })
+      }
+      return true
+    }),
+  privacyPolicies: yup.boolean().oneOf([true], 'You must accept the policy'),
+});
+
+const form = {
+  firstName: '',
+  lastName: '',
   email: '',
   password: '',
   privacyPolicies: false,
-})
+};
 
-const vuetifyTheme = useTheme()
+async function onSubmit(values) {
+  errorMessage.value = '';
+  submitting.value = true;
 
-const authThemeMask = computed(() => {
-  return vuetifyTheme.global.name.value === 'light' ? authV1MaskLight : authV1MaskDark
-})
-
-const isPasswordVisible = ref(false)
+  try {
+    await auth.register(values);
+    router.replace('/dashboard');
+  }
+  catch (e) {
+    errorMessage.value = e?.message || 'Registration failed';
+  }
+  finally {
+    submitting.value = false;
+  }
+}
 </script>
 
 <template>
@@ -57,59 +100,126 @@ const isPasswordVisible = ref(false)
       </VCardText>
 
       <VCardText>
-        <VForm @submit.prevent="() => {}">
+        <VeeForm
+          :initial-values="form"
+          :validation-schema="schema"
+          @submit="onSubmit"
+        >
           <VRow>
-            <!-- Username -->
-            <VCol cols="12">
-              <VTextField
-                v-model="form.username"
-                label="Username"
-                placeholder="Johndoe"
-              />
+            <!-- First Name -->
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <Field
+                name="firstName"
+                v-slot="{ field, errors }"
+              >
+                <VTextField
+                  label="First Name"
+                  placeholder="John"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                  :error-messages="errors"
+                />
+              </Field>
             </VCol>
+
+            <!-- Last Name -->
+            <VCol
+              cols="12"
+              md="6"
+            >
+              <Field
+                name="lastName"
+                v-slot="{ field, errors }"
+              >
+                <VTextField
+                  label="Last Name"
+                  placeholder="Doe"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                  :error-messages="errors"
+                />
+              </Field>
+            </VCol>
+
             <!-- email -->
             <VCol cols="12">
-              <VTextField
-                v-model="form.email"
-                label="Email"
-                placeholder="johndoe@email.com"
-                type="email"
-              />
+              <Field
+                name="email"
+                v-slot="{ field, errors }"
+              >
+                <VTextField
+                  label="Email"
+                  placeholder="johndoe@email.com"
+                  type="email"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                  :error-messages="errors"
+                />
+              </Field>
             </VCol>
 
             <!-- password -->
             <VCol cols="12">
-              <VTextField
-                v-model="form.password"
-                label="Password"
-                placeholder="············"
-                :type="isPasswordVisible ? 'text' : 'password'"
-                autocomplete="password"
-                :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
-                @click:append-inner="isPasswordVisible = !isPasswordVisible"
-              />
-              <div class="d-flex align-center my-6">
-                <VCheckbox
-                  id="privacy-policy"
-                  v-model="form.privacyPolicies"
-                  inline
+              <Field
+                name="password"
+                v-slot="{ field, errors }"
+              >
+                <VTextField
+                  label="Password"
+                  placeholder="············"
+                  :type="isPasswordVisible ? 'text' : 'password'"
+                  autocomplete="password"
+                  :append-inner-icon="isPasswordVisible ? 'ri-eye-off-line' : 'ri-eye-line'"
+                  @click:append-inner="isPasswordVisible = !isPasswordVisible"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                  :error-messages="errors"
                 />
-                <VLabel
-                  for="privacy-policy"
-                  style="opacity: 1;"
+              </Field>
+              <Field name="privacyPolicies" v-slot="{ field, errors }">
+                <VCheckbox
+                  class="my-2"
+                  :model-value="field.value"
+                  @update:model-value="field.onChange"
+                  @blur="field.onBlur"
+                  :error-messages="errors"
+                  hide-details="auto"
+                  density="comfortable"
                 >
-                  <span class="me-1">I agree to</span>
-                  <a
-                    href="javascript:void(0)"
-                    class="text-primary"
-                  >privacy policy & terms</a>
-                </VLabel>
-              </div>
+                  <template #label>
+                    <span
+                      class="me-1"
+                      style="color: rgba(var(--v-theme-on-surface), var(--v-high-emphasis-opacity))"
+                    >I agree to</span>
+                    <a
+                      href="javascript:void(0)"
+                      class="text-primary"
+                    >privacy policy & terms</a>
+                  </template>
+                </VCheckbox>
+              </Field>
+
+              <VAlert
+                v-if="errorMessage"
+                type="error"
+                class="mb-4"
+                density="comfortable"
+                variant="tonal"
+              >
+                {{ errorMessage }}
+              </VAlert>
 
               <VBtn
                 block
                 type="submit"
-                to="/"
+                :loading="submitting"
               >
                 Sign up
               </VBtn>
@@ -129,24 +239,8 @@ const isPasswordVisible = ref(false)
               </RouterLink>
             </VCol>
 
-            <VCol
-              cols="12"
-              class="d-flex align-center"
-            >
-              <VDivider />
-              <span class="mx-4">or</span>
-              <VDivider />
-            </VCol>
-
-            <!-- auth providers -->
-            <VCol
-              cols="12"
-              class="text-center"
-            >
-              <AuthProvider />
-            </VCol>
           </VRow>
-        </VForm>
+        </VeeForm>
       </VCardText>
     </VCard>
 

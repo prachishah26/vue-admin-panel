@@ -1,14 +1,62 @@
 <script setup>
-const accountData = {
-  firstName: 'john',
-  lastName: 'Doe',
-  email: 'johnDoe@example.com',
-}
+import { useAuthStore } from '@/stores/auth'
 
-const accountDataLocal = ref(structuredClone(accountData))
+const auth = useAuthStore()
+
+const submitting = ref(false)
+const successMessage = ref('')
+const errorMessage = ref('')
+
+const userData = computed(() => auth.getCurrentUserFullData())
+
+const accountDataLocal = ref({
+  firstName: userData.value?.firstName || '',
+  lastName: userData.value?.lastName || '',
+  email: userData.value?.email || '',
+})
+
+// Watch for user data changes
+watch(userData, (newData) => {
+  if (newData) {
+    accountDataLocal.value = {
+      firstName: newData.firstName,
+      lastName: newData.lastName,
+      email: newData.email,
+    }
+  }
+}, { immediate: true })
 
 const resetForm = () => {
-  accountDataLocal.value = structuredClone(accountData)
+  if (userData.value) {
+    accountDataLocal.value = {
+      firstName: userData.value.firstName,
+      lastName: userData.value.lastName,
+      email: userData.value.email,
+    }
+  }
+  successMessage.value = ''
+  errorMessage.value = ''
+}
+
+async function saveChanges() {
+  errorMessage.value = ''
+  successMessage.value = ''
+  submitting.value = true
+
+  try {
+    await auth.updateProfile({
+      firstName: accountDataLocal.value.firstName,
+      lastName: accountDataLocal.value.lastName,
+      email: accountDataLocal.value.email,
+    })
+    successMessage.value = 'Profile updated successfully!'
+  }
+  catch (e) {
+    errorMessage.value = e?.message || 'Failed to update profile'
+  }
+  finally {
+    submitting.value = false
+  }
 }
 </script>
 
@@ -17,13 +65,41 @@ const resetForm = () => {
     <VCol cols="12">
       <VCard title="Account Details">
         <VCardText>
+          <!-- 👉 Success/Error Messages -->
+          <VAlert
+            v-if="successMessage"
+            type="success"
+            class="mb-4"
+            density="comfortable"
+            variant="tonal"
+            closable
+            @click:close="successMessage = ''"
+          >
+            {{ successMessage }}
+          </VAlert>
+
+          <VAlert
+            v-if="errorMessage"
+            type="error"
+            class="mb-4"
+            density="comfortable"
+            variant="tonal"
+            closable
+            @click:close="errorMessage = ''"
+          >
+            {{ errorMessage }}
+          </VAlert>
+
           <!-- 👉 Form -->
-          <VForm class="mt-6">
+          <VForm
+            class="mt-6"
+            @submit.prevent="saveChanges"
+          >
             <VRow>
               <!-- 👉 First Name -->
               <VCol
-                md="6"
                 cols="12"
+                md="6"
               >
                 <VTextField
                   v-model="accountDataLocal.firstName"
@@ -34,8 +110,8 @@ const resetForm = () => {
 
               <!-- 👉 Last Name -->
               <VCol
-                md="6"
                 cols="12"
+                md="6"
               >
                 <VTextField
                   v-model="accountDataLocal.lastName"
@@ -62,7 +138,12 @@ const resetForm = () => {
                 cols="12"
                 class="d-flex flex-wrap gap-4"
               >
-                <VBtn>Save changes</VBtn>
+                <VBtn
+                  type="submit"
+                  :loading="submitting"
+                >
+                  Save changes
+                </VBtn>
 
                 <VBtn
                   color="secondary"

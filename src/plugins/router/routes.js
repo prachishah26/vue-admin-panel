@@ -1,5 +1,8 @@
 export const routes = [
-  { path: '/', redirect: '/dashboard' },
+  {
+    path: '/',
+    redirect: '/dashboard',
+  },
   {
     path: '/',
     component: () => import('@/layouts/default.vue'),
@@ -7,14 +10,17 @@ export const routes = [
       {
         path: 'dashboard',
         component: () => import('@/pages/dashboard.vue'),
+        meta: { requiresAuth: true },
       },
       {
         path: 'account-settings',
         component: () => import('@/pages/account-settings.vue'),
+        meta: { requiresAuth: true },
       },
       {
         path: 'users',
         component: () => import('@/pages/users.vue'),
+        meta: { requiresAuth: true },
       },
     ],
   },
@@ -25,10 +31,12 @@ export const routes = [
       {
         path: 'login',
         component: () => import('@/pages/login.vue'),
+        meta: { guestOnly: true },
       },
       {
         path: 'register',
         component: () => import('@/pages/register.vue'),
+        meta: { guestOnly: true },
       },
       {
         path: '/:pathMatch(.*)*',
