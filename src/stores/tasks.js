@@ -80,6 +80,26 @@ export const useTasksStore = defineStore(
       return tasks.value[taskIndex]
     }
 
+    const updateTaskStatus = (taskId, newStatusId) => {
+      const statusExists = statuses.value.find(status => status.id === newStatusId)
+      if (!statusExists) {
+        throw new Error(`Invalid status: ${newStatusId}`)
+      }
+
+      const taskIndex = tasks.value.findIndex(task => task.id === taskId)
+      if (taskIndex === -1) {
+        throw new Error('Task not found')
+      }
+
+      tasks.value[taskIndex] = {
+        ...tasks.value[taskIndex],
+        status: newStatusId,
+        updatedAt: new Date().toISOString(),
+      }
+
+      return tasks.value[taskIndex]
+    }
+
     return {
       statuses,
       tasks,
@@ -87,6 +107,7 @@ export const useTasksStore = defineStore(
       getTasksByStatus,
       deleteTask,
       updateTask,
+      updateTaskStatus,
     }
   },
   {
