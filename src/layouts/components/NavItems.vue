@@ -13,8 +13,6 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
     }"
   />
 
- 
-
   <!-- 👉 Apps & Pages -->
   <VerticalNavSectionTitle
     :item="{
@@ -24,16 +22,23 @@ import VerticalNavLink from '@layouts/components/VerticalNavLink.vue';
 
   <VerticalNavLink
     :item="{
-      title: 'Account Settings',
-      icon: 'ri-user-settings-line',
-      to: '/account-settings',
+      title: 'Users',
+      icon: 'ri-group-line',
+      to: '/users',
     }"
   />
   <VerticalNavLink
     :item="{
-      title: 'Users',
-      icon: 'ri-group-line',
-      to: '/users',
+      title: 'Tasks',
+      icon: 'ri-task-line',
+      to: '/tasks',
+    }"
+  />
+  <VerticalNavLink
+    :item="{
+      title: 'Account Settings',
+      icon: 'ri-user-settings-line',
+      to: '/account-settings',
     }"
   />
  

@@ -22,6 +22,11 @@ export const routes = [
         component: () => import('@/pages/users.vue'),
         meta: { requiresAuth: true },
       },
+      {
+        path: 'tasks',
+        component: () => import('@/pages/tasks.vue'),
+        meta: { requiresAuth: true },
+      },
     ],
   },
   {
